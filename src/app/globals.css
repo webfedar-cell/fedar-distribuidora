@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: var(--font-archivo), system-ui, -apple-system, sans-serif;
+    --font-heading: var(--font-barlow-condensed), sans-serif;
+    --color-primary: #12355B;
+    --color-primary-dark: #0A1F36;
+    --color-primary-deep: #0F1B2D;
+    --color-accent: #E0A93B;
+    --color-accent-hover: #CCA92C;
+    --color-bg-main: #F3F1EC;
+    --color-bg-card: #FFFFFF;
+    --color-border: #DDD8CE;
+    --color-border-subtle: #E7E2D8;
+    --color-text-main: #0F1B2D;
+    --color-text-muted: #5A6472;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-bg-main);
+    color: var(--color-text-main);
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-heading {
+    font-family: var(--font-heading);
+  }
+}
+
+/* Background grid patterns from design */
+.hero-grid-pattern {
+  background-color: #12355B;
+  background-image: 
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 40px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 40px);
+}
+
+.hero-grid-pattern-mobile {
+  background-color: #12355B;
+  background-image: 
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 32px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 32px);
+}
+
+.card-pattern {
+  background-color: #F7F5F0;
+  background-image: repeating-linear-gradient(135deg, rgba(18, 53, 91, 0.05) 0 2px, transparent 2px 14px);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F3F1EC;
+}
+::-webkit-scrollbar-thumb {
+  background: #CFC9BD;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #B9B2A5;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s ease-in-out infinite;
+}
