@@ -46,7 +46,9 @@ export async function GET(
     if (rows && rows.length > 0) {
       const row = rows[0];
       const photosBaseUrl =
-        process.env.NEXT_PUBLIC_PHOTOS_URL || "https://fedardistribuidora.com.ar/uploads";
+        process.env.PHOTOS_URL ||
+        process.env.NEXT_PUBLIC_PHOTOS_URL ||
+        "https://fedardistribuidora.com.ar/uploads";
 
       // Fetch all photos for this product
       const photoRows = await query<any>(

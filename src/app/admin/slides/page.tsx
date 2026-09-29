@@ -53,7 +53,7 @@ export default function AdminSlidesPage() {
   const [deleting, setDeleting] = useState(false);
 
   const photosBaseUrl =
-    process.env.NEXT_PUBLIC_PHOTOS_URL || "https://fedardistribuidora.com.ar/uploads/";
+    process.env.NEXT_PUBLIC_PORTADA_URL || "https://fedardistribuidora.com.ar/portada/";
 
   const loadSlides = async () => {
     setLoading(true);
@@ -391,7 +391,7 @@ export default function AdminSlidesPage() {
                   className="w-full h-11 px-3 bg-[#FAF9F6] border border-[#CFC9BD] rounded-lg text-sm text-[#0F1B2D] outline-hidden focus:border-[#12355B] focus:bg-white font-mono"
                 />
                 <span className="text-[11px] text-[#8A96A5]">
-                  Archivo ubicado en la carpeta uploads de Banahosting o URL completa.
+                  Archivo ubicado en la carpeta portada de Banahosting o URL completa.
                 </span>
               </div>
 

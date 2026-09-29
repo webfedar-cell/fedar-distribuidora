@@ -13,7 +13,7 @@ export interface HeroSlide {
 const DEFAULT_SLIDES: HeroSlide[] = [
   {
     id: "default-1",
-    image: "https://fedardistribuidora.com.ar/uploads/EVITA%20SOLDADURA%20(1).jpg",
+    image: "https://fedardistribuidora.com.ar/portada/EVITA%20SOLDADURA%20(1).jpg",
     title: "PRACTICOS ORGANIZADORES PARA TODOS LOS ARTICULOS",
     subtitle: "Sistema Mostrador",
     badge: "+1.500 ferreterías y buloneras activas",
@@ -21,25 +21,25 @@ const DEFAULT_SLIDES: HeroSlide[] = [
   },
   {
     id: "default-2",
-    image: "https://fedardistribuidora.com.ar/uploads/RESORTES.jpg",
-    title: "Línea Completa de Resortes",
-    subtitle: "Ferretería & Automotor",
-    badge: "Surtido amplio de medidas",
-    linkUrl: "/productos",
-  },
-  {
-    id: "default-3",
-    image: "https://fedardistribuidora.com.ar/uploads/54%20PLASTICO%201%20(4)%20(1)%20(3)%20(1)%20(1).jpg",
+    image: "https://fedardistribuidora.com.ar/portada/54%20PLASTICO%201%20(4)%20(1)%20(3)%20(1)%20(1).jpg",
     title: "EXHIBIDOR INCLUIDO EN CADA GAVETERO",
     subtitle: "Organización de Mostrador",
     badge: "Exhibidor incluido con el surtido",
     linkUrl: "/productos",
   },
   {
+    id: "default-3",
+    image: "https://fedardistribuidora.com.ar/portada/54%20PLASTICO%201%20(4)%20(1)%20(1).jpg",
+    title: "VISITA PERIODICA DEL VENDEDOR",
+    subtitle: "Atención Personalizada",
+    badge: "Reposición periódica por corredor",
+    linkUrl: "/productos",
+  },
+  {
     id: "default-4",
-    image: "https://fedardistribuidora.com.ar/uploads/flyer-001.jpg",
-    title: "Fichas, Conectores y Accesorios",
-    subtitle: "Electricidad y Repuestos",
+    image: "https://fedardistribuidora.com.ar/portada/vacio%20(1).jpg",
+    title: "SURTIDO DE MEDIDAS Y MODELOS",
+    subtitle: "Stock Permanente",
     badge: "Stock permanente para entrega inmediata",
     linkUrl: "/productos",
   },
@@ -47,8 +47,10 @@ const DEFAULT_SLIDES: HeroSlide[] = [
 
 export async function GET() {
   try {
-    const photosBaseUrl =
-      process.env.NEXT_PUBLIC_PHOTOS_URL || "https://fedardistribuidora.com.ar/uploads";
+    const portadaBaseUrl =
+      process.env.PORTADA_URL ||
+      process.env.NEXT_PUBLIC_PORTADA_URL ||
+      "https://fedardistribuidora.com.ar/portada";
 
     const rows = await query<any>(`
       SELECT 
@@ -77,7 +79,7 @@ export async function GET() {
           const fileName = r.PO_ARCHIVO.trim();
           const imgUrl = fileName.startsWith("http")
             ? fileName
-            : `${photosBaseUrl.replace(/\/$/, "")}/${encodeURI(fileName)}`;
+            : `${portadaBaseUrl.replace(/\/$/, "")}/${encodeURI(fileName)}`;
 
           const title = (r.PO_TITULO || "").trim() || "Organizador de Mostrador";
           const subtitle = (r.PO_DESCRIPCION || "").trim() || "Sistema Mostrador";

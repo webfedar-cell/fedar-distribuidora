@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0E58AA"/>
+      <stop offset="100%" stop-color="#08376B"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F2B94C"/>
+      <stop offset="100%" stop-color="#D49624"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fondo Cuadrado Redondeado Moderno -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+  <rect x="8" y="8" width="496" height="496" rx="104" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="12"/>
+
+  <!-- Detalle sutil de esquina dorada -->
+  <path d="M 380 48 L 440 48 C 455 48 464 57 464 72 L 464 132" fill="none" stroke="url(#accentGrad)" stroke-width="16" stroke-linecap="round"/>
+
+  <!-- Letra 'F' Impulso Corporativo FEDAR -->
+  <!-- Columna Vertical Principal -->
+  <path d="M 148 116 L 224 116 L 224 396 L 148 396 Z" fill="#FFFFFF"/>
+  
+  <!-- Barra Superior Horizontal con remate angular FEDAR -->
+  <path d="M 224 116 L 368 116 L 396 188 L 224 188 Z" fill="#FFFFFF"/>
+  
+  <!-- Barra Media Horizontal con detalle dinámico Dorado -->
+  <path d="M 224 236 L 332 236 L 354 300 L 224 300 Z" fill="url(#accentGrad)"/>
+</svg>
