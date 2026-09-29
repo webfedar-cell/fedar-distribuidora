@@ -62,7 +62,7 @@ export async function GET() {
         }
 
         const imageUrl = fileName
-          ? `${photosBaseUrl.replace(/\/$/, "")}/${fileName}`
+          ? `${photosBaseUrl.replace(/\/$/, "")}/${encodeURI(fileName)}`
           : undefined;
 
         return {

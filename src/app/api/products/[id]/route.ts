@@ -58,7 +58,7 @@ export async function GET(
       );
 
       const photos = (photoRows || [])
-        .map((f: any) => (f.FO_ARCHIVO ? `${photosBaseUrl.replace(/\/$/, "")}/${f.FO_ARCHIVO.trim()}` : null))
+        .map((f: any) => (f.FO_ARCHIVO ? `${photosBaseUrl.replace(/\/$/, "")}/${encodeURI(f.FO_ARCHIVO.trim())}` : null))
         .filter(Boolean) as string[];
 
       const title = (row.PR_TITULO || "").trim();

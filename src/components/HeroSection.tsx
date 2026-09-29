@@ -2,10 +2,10 @@
 
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { MessageSquare, Download, CheckCircle2, Sparkles, Layers, ArrowRight } from "lucide-react";
+import { Download, CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
 import { COMPANY_DATA } from "@/data/products";
 import { useModals } from "@/context/ModalContext";
+import { HeroSlider } from "@/components/HeroSlider";
 
 interface HeroSectionProps {
   onOpenPriceListModal?: () => void;
@@ -81,42 +81,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenPriceListModal }
             </div>
           </div>
 
-          {/* Columna Ilustración / Gavetero */}
+          {/* Columna Slider de Productos / Portada */}
           <div className="lg:col-span-5 relative flex items-center justify-center lg:justify-end">
-            <div className="relative w-full max-w-[440px] sm:max-w-[480px]">
-              {/* Badge flotante Gavetero */}
-              <div className="absolute -top-4 -left-2 sm:-left-6 z-20 bg-[#0A1F36]/90 border border-[#4873A2] rounded-xl px-4 py-2.5 shadow-xl backdrop-blur-md flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-[#E0A93B]/20 border border-[#E0A93B]/40 flex items-center justify-center">
-                  <Layers className="w-5 h-5 text-[#E0A93B]" />
-                </div>
-                <div>
-                  <div className="text-[11px] uppercase tracking-wider text-[#A5BCD4] font-semibold">Sistema Mostrador</div>
-                  <div className="text-sm font-bold text-white">Gavetero Listo Para Vender</div>
-                </div>
-              </div>
-
-              {/* Imagen principal del gavetero */}
-              <div className="relative rounded-2xl overflow-hidden p-3 bg-gradient-to-b from-white/10 to-transparent border border-white/15 backdrop-blur-xs shadow-2xl">
-                <div className="relative aspect-4/3 w-full flex items-center justify-center bg-[#0d2a4a]/40 rounded-xl overflow-hidden">
-                  <Image
-                    src="/images/gavetero.png"
-                    alt="Gavetero organizador de terminales y accesorios FEDAR"
-                    fill
-                    sizes="(max-width: 768px) 100vw, 480px"
-                    className="object-contain p-2 hover:scale-105 transition-transform duration-500"
-                    priority
-                  />
-                </div>
-              </div>
-
-              {/* Badge flotante inferior */}
-              <div className="absolute -bottom-4 -right-2 sm:-right-4 z-20 bg-[#12355B]/95 border border-[#6F8BAA] rounded-xl px-4 py-2 shadow-xl backdrop-blur-md flex items-center gap-2.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#25D366] animate-ping" />
-                <span className="text-xs font-semibold text-white">
-                  +1.500 ferreterías y buloneras activas
-                </span>
-              </div>
-            </div>
+            <HeroSlider />
           </div>
         </div>
       </div>
