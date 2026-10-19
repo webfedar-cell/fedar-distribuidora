@@ -24,9 +24,10 @@ export default function ContactoPage() {
   const [businessName, setBusinessName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
   const [location, setLocation] = useState("");
   const [message, setMessage] = useState("");
-  const [interest, setInterest] = useState("Lista de precios mayorista");
+  const [interest, setInterest] = useState("Solicitud de listas de precios y catalogo");
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -35,7 +36,7 @@ export default function ContactoPage() {
   };
 
   const handleWhatsappSend = () => {
-    const text = `Hola FEDAR! Me contacto desde la web.\nNombre: ${name || "-"}\nComercio: ${businessName || "-"}\nLocalidad: ${location || "-"}\nInterés: ${interest}\nMensaje: ${message || "Quisiera más información sobre sus productos y condiciones comerciales."}`;
+    const text = `Hola FEDAR! Me contacto desde la web.\nNombre: ${name || "-"}\nComercio: ${businessName || "-"}\nDirección: ${address || "-"}\nLocalidad: ${location || "-"}\nInterés: ${interest}\nMensaje: ${message || "Quisiera más información sobre sus productos y condiciones comerciales."}`;
     const url = `https://wa.me/${config.whatsappNumber}?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
   };
@@ -134,6 +135,34 @@ export default function ContactoPage() {
 
                     <div className="flex flex-col gap-1.5">
                       <label className="text-xs font-bold uppercase tracking-wider text-[#0F1B2D]">
+                        Email (Opcional)
+                      </label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="contacto@ferreteria.com"
+                        className="h-12 px-4 bg-[#FAF9F6] border border-[#CFC9BD] focus:border-[#12355B] rounded-xl text-sm text-[#0F1B2D] outline-hidden transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#0F1B2D]">
+                        Dirección
+                      </label>
+                      <input
+                        type="text"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        placeholder="Ej: Av. San Martín 1420"
+                        className="h-12 px-4 bg-[#FAF9F6] border border-[#CFC9BD] focus:border-[#12355B] rounded-xl text-sm text-[#0F1B2D] outline-hidden transition-all"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#0F1B2D]">
                         Localidad / Provincia *
                       </label>
                       <input
@@ -147,37 +176,22 @@ export default function ContactoPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-[#0F1B2D]">
-                        Email (Opcional)
-                      </label>
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="contacto@ferreteria.com"
-                        className="h-12 px-4 bg-[#FAF9F6] border border-[#CFC9BD] focus:border-[#12355B] rounded-xl text-sm text-[#0F1B2D] outline-hidden transition-all"
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-[#0F1B2D]">
-                        Motivo de Consulta
-                      </label>
-                      <select
-                        value={interest}
-                        onChange={(e) => setInterest(e.target.value)}
-                        className="h-12 px-3 bg-[#FAF9F6] border border-[#CFC9BD] focus:border-[#12355B] rounded-xl text-sm text-[#0F1B2D] outline-hidden transition-all"
-                      >
-                        <option>Lista de precios mayorista</option>
-                        <option>Instalación de gavetero en mostrador</option>
-                        <option>Visita de corredor en mi comercio</option>
-                        <option>Cotización por volumen / bulto cerrado</option>
-                        <option>Envíos al interior / Expreso</option>
-                        <option>Otro motivo</option>
-                      </select>
-                    </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[#0F1B2D]">
+                      Motivo de Consulta
+                    </label>
+                    <select
+                      value={interest}
+                      onChange={(e) => setInterest(e.target.value)}
+                      className="h-12 px-3 bg-[#FAF9F6] border border-[#CFC9BD] focus:border-[#12355B] rounded-xl text-sm text-[#0F1B2D] outline-hidden transition-all"
+                    >
+                      <option>Solicitud de listas de precios y catalogo</option>
+                      <option>Cotización</option>
+                      <option>Primer compra o hacer un pedido</option>
+                      <option>Visita de corredor en mi comercio</option>
+                      <option>Envíos al interior</option>
+                      <option>Otro motivo</option>
+                    </select>
                   </div>
 
                   <div className="flex flex-col gap-1.5">
