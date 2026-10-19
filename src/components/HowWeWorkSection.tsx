@@ -9,7 +9,7 @@ export const HowWeWorkSection: React.FC = () => {
   const steps = [
     {
       num: "01",
-      title: "Te instalamos el gavetero",
+      title: "Te llevamos el gavetero",
       description:
         "Organizador y exhibidor con los artículos y medidas de mayor rotación para tu rubro.",
       icon: Layers,
@@ -18,7 +18,7 @@ export const HowWeWorkSection: React.FC = () => {
       num: "02",
       title: "Vendés desde el mostrador",
       description:
-        "Cada cajón a la vista: encontrás la medida al instante y ves enseguida lo que se está agotando.",
+        "En cada gavetero encontrás la medida al instante para su venta y ves enseguida lo que se está agotando.",
       icon: Store,
     },
     {
@@ -50,13 +50,17 @@ export const HowWeWorkSection: React.FC = () => {
               Sistema FEDAR
             </div>
             <h2 className="font-heading font-extrabold text-[32px] sm:text-[42px] lg:text-[48px] leading-[1.05] text-[#0F1B2D] uppercase tracking-tight">
-              El sistema de gaveteros que te hace vender más sin inmovilizar capital.
+              El sistema de gaveteros que te hace vender mejor, rápido y ordenado.
             </h2>
             <p className="text-[15px] sm:text-[17px] leading-[1.6] text-[#5A6472]">
-              Los gaveteros son un stock inicial organizado y exhibido, con las medidas que más rotan.
-              Así sabés qué tenés, qué falta y no volvés a comprar de más ni a perder ventas en el mostrador.
+              Los gaveteros son un stock inicial ideal para tu negocio (ORGANIZADOR + EXHIBIDOR + ARTÍCULOS )
             </p>
-
+            <p className="text-[15px] sm:text-[17px] leading-[1.6] text-[#5A6472]">
+              Están armados exactamente con las medidas de mayor rotación. La gran ventaja es que, una vez que lo tenés, para reponer solo comprás la medida que te hace falta… ¡no tenés que volver a comprar la estructura del gavetero!
+            </p>
+            <p className="text-[15px] sm:text-[17px] leading-[1.6] text-[#5A6472]">
+              Tenemos mas de 100 gaveteros diferentes
+            </p>
             <div className="mt-2 p-5 rounded-xl bg-[#F7F5F0] border border-[#DDD8CE] flex flex-col gap-3">
               <div className="font-semibold text-sm text-[#12355B] flex items-center gap-2">
                 <Check className="w-4 h-4 text-[#1F8F4E]" />

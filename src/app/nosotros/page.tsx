@@ -34,7 +34,7 @@ export default function NosotrosPage() {
                 Quiénes Somos y Cómo Trabajamos
               </h1>
               <p className="text-[15px] sm:text-[17px] text-[#C9D6E3] leading-relaxed">
-                Más de 20 años dedicados al abastecimiento mayorista y al desarrollo del sistema de gaveteros para ferreterías, buloneras y repuesteros de todo el país.
+                En Distribuidora Fedar contamos con más de 20 años de trayectoria en el mercado, especializándonos en la distribución de artículos de ferretería, bulonería y repuestos.
               </p>
             </div>
 

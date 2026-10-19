@@ -20,17 +20,10 @@ export const AboutSection: React.FC = () => {
               Sobre Nosotros
             </div>
             <h2 className="font-heading font-extrabold text-[32px] sm:text-[42px] leading-[1.1] text-[#0F1B2D] uppercase tracking-tight">
-              Especialistas en soluciones ágiles para el mostrador ferretero y automotor.
+              ESPECIALISTAS EN SISTEMA DE GAVETEROS: VENTA, EXHIBICIÓN Y REPOSICIÓN INTELIGENTE
             </h2>
             <p className="text-[15px] sm:text-[16px] text-[#5A6472] leading-[1.6]">
-              En <strong>FEDAR Distribuidora</strong> nos dedicamos al abastecimiento mayorista integral
-              de terminales eléctricas, abrazaderas, orings, tornillería, fusibles y accesorios para
-              ferreterías, buloneras, casas de repuestos e industrias de todo el país.
-            </p>
-            <p className="text-[15px] sm:text-[16px] text-[#5A6472] leading-[1.6]">
-              Nuestro compromiso es acompañar el crecimiento de tu negocio brindándote stock constante,
-              calidad asegurada y el reconocido sistema de gaveteros con reposición personalizada por
-              corredores que optimiza tu inversión y garantiza tus ventas diarias.
+              Diseñado específicamente para ordenar artículos pequeños (como terminales, orings, arandelas, tuercas, etc etc. ). Funciona con un muestrario visual que deja todo a la vista de tus clientes para incentivar la venta, ofreciéndote además un sistema de reposición fácil, ordenado y periódico a través de nuestros corredores.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
@@ -44,7 +37,7 @@ export const AboutSection: React.FC = () => {
               </div>
               <div className="flex items-center gap-2 text-sm text-[#0F1B2D] font-medium">
                 <CheckCircle className="w-4 h-4 text-[#E0A93B] shrink-0" />
-                <span>Asesoramiento técnico en mostrador</span>
+                <span>Mas de 100 gaveteros diferentes</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-[#0F1B2D] font-medium">
                 <CheckCircle className="w-4 h-4 text-[#E0A93B] shrink-0" />
