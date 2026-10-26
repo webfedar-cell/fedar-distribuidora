@@ -77,7 +77,7 @@ export async function GET() {
         .filter((r: any) => r.PO_ARCHIVO && r.PO_ARCHIVO.trim() !== "")
         .map((r: any, idx: number) => {
           const fileName = r.PO_ARCHIVO.trim();
-          const imgUrl = fileName.startsWith("http")
+          const imgUrl = fileName.startsWith("http") || fileName.startsWith("/")
             ? fileName
             : `${portadaBaseUrl.replace(/\/$/, "")}/${encodeURI(fileName)}`;
 

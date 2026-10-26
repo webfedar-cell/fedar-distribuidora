@@ -22,7 +22,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    const folderParam = formData.get("folder") as string | null;
+    const targetFolder = folderParam === "portada" ? "portada" : "uploads";
+    const uploadDir = path.join(process.cwd(), "public", targetFolder);
     await fs.promises.mkdir(uploadDir, { recursive: true });
 
     const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg", ".avif"];
@@ -60,7 +62,7 @@ export async function POST(req: NextRequest) {
         .replace(/[^a-z0-9_-]/g, "_")
         .slice(0, 30);
       const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      const safeFilename = `${cleanBase || "foto"}_${uniqueSuffix}${ext}`;
+      const safeFilename = `${cleanBase || "slide"}_${uniqueSuffix}${ext}`;
       const targetFilePath = path.join(uploadDir, safeFilename);
 
       const buffer = Buffer.from(await file.arrayBuffer());
@@ -68,7 +70,7 @@ export async function POST(req: NextRequest) {
 
       uploadedResults.push({
         filename: safeFilename,
-        url: `/uploads/${safeFilename}`,
+        url: `/${targetFolder}/${safeFilename}`,
         originalName,
       });
     }

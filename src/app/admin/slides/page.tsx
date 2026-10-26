@@ -16,6 +16,8 @@ import {
   MoveDown,
   Layers,
   Sparkles,
+  Upload,
+  Link2,
 } from "lucide-react";
 
 interface SlideItem {
@@ -52,8 +54,23 @@ export default function AdminSlidesPage() {
   const [deleteConfirmSlide, setDeleteConfirmSlide] = useState<SlideItem | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Upload & Preview State
+  const [uploadingSlide, setUploadingSlide] = useState(false);
+  const [showManualUrl, setShowManualUrl] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   const photosBaseUrl =
     process.env.NEXT_PUBLIC_PORTADA_URL || "https://fedardistribuidora.com.ar/portada/";
+
+  const getDisplaySlideUrl = (fileName?: string | null) => {
+    if (!fileName) return null;
+    const trimmed = fileName.trim();
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("/")) {
+      return trimmed;
+    }
+    return `/portada/${encodeURIComponent(trimmed)}`;
+  };
 
   const loadSlides = async () => {
     setLoading(true);
@@ -84,6 +101,8 @@ export default function AdminSlidesPage() {
       ordenar: (slides.length + 1) * 10,
       status: 1,
     });
+    setPreviewUrl(null);
+    setShowManualUrl(false);
     setActionError("");
     setActionSuccess("");
     setModalOpen(true);
@@ -99,9 +118,62 @@ export default function AdminSlidesPage() {
       ordenar: slide.PO_ORDENAR,
       status: slide.PO_STATUS,
     });
+    setPreviewUrl(slide.PO_ARCHIVO ? getDisplaySlideUrl(slide.PO_ARCHIVO) : null);
+    setShowManualUrl(false);
     setActionError("");
     setActionSuccess("");
     setModalOpen(true);
+  };
+
+  const processSlideFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setActionError("Por favor selecciona un archivo de imagen válido (JPG, PNG, WEBP).");
+      return;
+    }
+
+    setUploadingSlide(true);
+    setActionError("");
+
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+      uploadFormData.append("folder", "portada");
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: uploadFormData,
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setActionError(data.message || "Error al subir la imagen del banner.");
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          archivo: data.filename || data.url,
+        }));
+        setPreviewUrl(data.url);
+      }
+    } catch (err) {
+      console.error("Error al subir archivo de portada:", err);
+      setActionError("Error de comunicación al subir la imagen.");
+    } finally {
+      setUploadingSlide(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    await processSlideFile(e.target.files[0]);
+    e.target.value = "";
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      await processSlideFile(e.dataTransfer.files[0]);
+    }
   };
 
   const handleToggleStatus = async (slide: SlideItem) => {
@@ -222,11 +294,7 @@ export default function AdminSlidesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {slides.map((slide) => {
-            const imageUrl = slide.PO_ARCHIVO
-              ? slide.PO_ARCHIVO.startsWith("http")
-                ? slide.PO_ARCHIVO
-                : `${photosBaseUrl.replace(/\/$/, "")}/${encodeURIComponent(slide.PO_ARCHIVO)}`
-              : null;
+            const imageUrl = getDisplaySlideUrl(slide.PO_ARCHIVO);
 
             return (
               <div
@@ -330,13 +398,13 @@ export default function AdminSlidesPage() {
 
       {/* Modal Crear / Editar Slide */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in overflow-y-auto">
           <div
-            className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-[#DDD8CE] flex flex-col"
+            className="bg-white rounded-2xl max-w-xl w-full my-6 max-h-[92vh] overflow-hidden shadow-2xl border border-[#DDD8CE] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-5 bg-[#0A1F36] text-white">
+            <div className="flex items-center justify-between p-5 bg-[#0A1F36] text-white shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[#E0A93B]/20 text-[#E0A93B] flex items-center justify-center">
                   <Images className="w-5 h-5" />
@@ -361,7 +429,7 @@ export default function AdminSlidesPage() {
             </div>
 
             {/* Modal Form */}
-            <form onSubmit={handleSaveSlide} className="p-6 flex flex-col gap-4">
+            <form onSubmit={handleSaveSlide} className="p-6 flex flex-col gap-4 overflow-y-auto max-h-[calc(92vh-130px)]">
               {actionError && (
                 <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -376,23 +444,133 @@ export default function AdminSlidesPage() {
                 </div>
               )}
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#0F1B2D]">
-                  Nombre de Archivo de Imagen o URL
+              {/* Sección de Imagen del Slide */}
+              <div className="flex flex-col gap-2.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-[#0F1B2D] flex items-center justify-between">
+                  <span>Imagen del Banner / Slide</span>
+                  {formData.archivo && (
+                    <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-semibold">
+                      Imagen cargada
+                    </span>
+                  )}
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.archivo}
-                  onChange={(e) =>
-                    setFormData({ ...formData, archivo: e.target.value })
-                  }
-                  placeholder="Ej: banner-fedar-2024.jpg o https://..."
-                  className="w-full h-11 px-3 bg-[#FAF9F6] border border-[#CFC9BD] rounded-lg text-sm text-[#0F1B2D] outline-hidden focus:border-[#12355B] focus:bg-white font-mono"
-                />
-                <span className="text-[11px] text-[#8A96A5]">
-                  Archivo ubicado en la carpeta portada de Banahosting o URL completa.
-                </span>
+
+                {/* Previsualización si existe */}
+                {formData.archivo ? (
+                  <div className="relative rounded-xl overflow-hidden border border-[#DDD8CE] bg-[#0A1F36] shadow-inner group">
+                    <div className="h-44 w-full flex items-center justify-center overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={previewUrl || getDisplaySlideUrl(formData.archivo) || ""}
+                        alt="Previsualización"
+                        className="w-full h-full object-cover"
+                        onError={(e: any) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    </div>
+
+                    {/* Overlay informativo y botón cambiar */}
+                    <div className="absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black/85 via-black/50 to-transparent flex items-center justify-between gap-2 text-white">
+                      <span className="text-[11px] font-mono truncate max-w-[280px]" title={formData.archivo}>
+                        {formData.archivo}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, archivo: "" });
+                          setPreviewUrl(null);
+                        }}
+                        className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-sm"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Cambiar</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Dropzone para subir */
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
+                    }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={handleDrop}
+                    className={`relative border-2 border-dashed rounded-xl p-5 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-2 ${
+                      isDragging
+                        ? "border-[#12355B] bg-[#12355B]/5 scale-[0.99]"
+                        : "border-[#CFC9BD] hover:border-[#12355B] bg-[#FAF9F6] hover:bg-white"
+                    }`}
+                  >
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+                      disabled={uploadingSlide}
+                      onChange={handleFileUpload}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+
+                    {uploadingSlide ? (
+                      <div className="flex flex-col items-center gap-2 py-3">
+                        <Loader2 className="w-6 h-6 animate-spin text-[#12355B]" />
+                        <span className="text-xs font-bold text-[#12355B]">
+                          Subiendo banner a portada...
+                        </span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-10 h-10 rounded-full bg-[#12355B]/10 text-[#12355B] flex items-center justify-center">
+                          <Upload className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-[#0F1B2D]">
+                            Haz clic aquí o arrastra un banner para subirlo
+                          </span>
+                          <p className="text-[11px] text-[#5A6472] mt-0.5">
+                            Formatos: JPG, PNG, WEBP (hasta 12MB). Se almacenará en la portada.
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* Opción de ingreso manual por nombre o URL */}
+                <div className="flex flex-col gap-2 mt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowManualUrl(!showManualUrl)}
+                    className="text-xs text-[#12355B] hover:text-[#0A1F36] font-semibold flex items-center gap-1.5 self-start cursor-pointer transition-colors"
+                  >
+                    <Link2 className="w-3.5 h-3.5" />
+                    <span>
+                      {showManualUrl
+                        ? "Ocultar ingreso manual por nombre/URL"
+                        : "+ ¿Deseas ingresar la imagen por nombre de archivo o URL externa?"}
+                    </span>
+                  </button>
+
+                  {showManualUrl && (
+                    <div className="p-3 bg-[#FAF9F6] border border-[#DDD8CE] rounded-xl flex flex-col gap-1.5 animate-in fade-in">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={formData.archivo}
+                          onChange={(e) => {
+                            setFormData({ ...formData, archivo: e.target.value });
+                            setPreviewUrl(null);
+                          }}
+                          placeholder="Ej: WhatsApp Image 2026-10-24 at 11.30.00.jpeg o https://..."
+                          className="flex-1 h-10 px-3 bg-white border border-[#CFC9BD] rounded-lg text-xs text-[#0F1B2D] outline-hidden focus:border-[#12355B] font-mono"
+                        />
+                      </div>
+                      <span className="text-[10px] text-[#8A96A5]">
+                        Nombre de archivo ubicado en la carpeta portada de Banahosting o URL completa.
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex flex-col gap-1.5">

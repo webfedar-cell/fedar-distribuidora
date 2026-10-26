@@ -20,9 +20,11 @@
 # production
 /build
 
-# uploads
+# uploads and portada
 /public/uploads/*
 !/public/uploads/.gitkeep
+/public/portada/*
+!/public/portada/.gitkeep
 
 # misc
 .DS_Store
