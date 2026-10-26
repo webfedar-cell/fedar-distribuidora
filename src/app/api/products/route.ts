@@ -32,7 +32,7 @@ export async function GET() {
       LEFT JOIN \`SUBCATEGORIAS\` s ON p.PR_SUBCATEGORIA = s.SUB_ID
       WHERE p.PR_STATUS = 1 
       GROUP BY p.PR_ID
-      ORDER BY p.PR_ORDENAR ASC, p.PR_TITULO ASC`
+      ORDER BY CASE WHEN p.PR_ORDENAR > 0 THEN 0 ELSE 1 END, p.PR_ORDENAR ASC, p.PR_TITULO ASC`
     );
 
     if (rows && rows.length > 0) {
@@ -74,6 +74,7 @@ export async function GET() {
         return {
           id: row.PR_URL ? row.PR_URL.toLowerCase() : String(row.PR_ID),
           num,
+          order: Number(row.PR_ORDENAR) || 0,
           name: title,
           photoLabel: `Foto: ${title}`,
           imageUrl,

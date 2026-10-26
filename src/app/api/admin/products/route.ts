@@ -8,6 +8,7 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search") || "";
     const category = searchParams.get("category") || "";
     const status = searchParams.get("status") || "";
+    const sortBy = searchParams.get("sortBy") || "order";
     const page = Math.max(1, Number(searchParams.get("page")) || 1);
     const limit = Math.max(1, Number(searchParams.get("limit")) || 20);
     const offset = (page - 1) * limit;
@@ -38,6 +39,14 @@ export async function GET(req: NextRequest) {
     const totalResult: any = await query(countSql, params);
     const total = totalResult[0]?.total || 0;
 
+    // Cláusula de ordenamiento
+    let orderClause = "ORDER BY CASE WHEN p.PR_ORDENAR > 0 THEN 0 ELSE 1 END, p.PR_ORDENAR ASC, p.PR_ID DESC";
+    if (sortBy === "id_desc") {
+      orderClause = "ORDER BY p.PR_ID DESC";
+    } else if (sortBy === "title_asc") {
+      orderClause = "ORDER BY p.PR_TITULO ASC";
+    }
+
     // Productos con categorías y foto principal
     const sql = `
       SELECT 
@@ -59,7 +68,7 @@ export async function GET(req: NextRequest) {
       LEFT JOIN CATEGORIAS c ON c.CA_ID = p.PR_CATEGORIA
       LEFT JOIN SUBCATEGORIAS s ON s.SUB_ID = p.PR_SUBCATEGORIA
       ${whereClause}
-      ORDER BY p.PR_ID DESC
+      ${orderClause}
       LIMIT ${limit} OFFSET ${offset}
     `;
 

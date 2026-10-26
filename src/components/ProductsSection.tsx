@@ -28,7 +28,12 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
         if (res.ok) {
           const json = await res.json();
           if (json.data && json.data.length > 0) {
-            setProducts(json.data.slice(0, 11)); // Display first 11 on Home + Card 12
+            const sorted = [...json.data].sort((a: ProductItem, b: ProductItem) => {
+              const ordA = a.order !== undefined && a.order > 0 ? a.order : 999999;
+              const ordB = b.order !== undefined && b.order > 0 ? b.order : 999999;
+              return ordA - ordB;
+            });
+            setProducts(sorted.slice(0, 11)); // Display first 11 on Home + Card 12
           }
         }
       } catch {

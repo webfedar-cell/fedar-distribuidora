@@ -13,6 +13,7 @@ export interface ProductItem {
   photoLabel?: string;
   imageUrl?: string;
   subCategory?: string;
+  order?: number;
 }
 
 export const CATEGORIES_LIST: ProductItem[] = [

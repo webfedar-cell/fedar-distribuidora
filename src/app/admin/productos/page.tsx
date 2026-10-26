@@ -70,6 +70,7 @@ export default function AdminProductosPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedSort, setSelectedSort] = useState("order");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -148,6 +149,7 @@ export default function AdminProductosPage() {
         search: searchTerm,
         category: selectedCategory,
         status: selectedStatus,
+        sortBy: selectedSort,
       });
 
       const res = await fetch(`/api/admin/products?${params.toString()}`);
@@ -163,7 +165,7 @@ export default function AdminProductosPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchTerm, selectedCategory, selectedStatus]);
+  }, [currentPage, searchTerm, selectedCategory, selectedStatus, selectedSort]);
 
   useEffect(() => {
     loadProducts();
@@ -506,6 +508,20 @@ export default function AdminProductosPage() {
           <option value="1">Activos</option>
           <option value="0">Inactivos</option>
         </select>
+
+        {/* Sort Filter */}
+        <select
+          value={selectedSort}
+          onChange={(e) => {
+            setSelectedSort(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="h-11 px-3 bg-[#FAF9F6] border border-[#DDD8CE] rounded-xl text-xs sm:text-sm text-[#0F1B2D] outline-hidden focus:border-[#12355B] focus:bg-white font-medium"
+        >
+          <option value="order">Ordenar por: N° Orden (Catálogo)</option>
+          <option value="id_desc">Ordenar por: Más recientes (ID)</option>
+          <option value="title_asc">Ordenar por: Título (A-Z)</option>
+        </select>
       </div>
 
       {/* Products Table */}
@@ -526,6 +542,7 @@ export default function AdminProductosPage() {
             <table className="w-full text-left text-sm text-[#0F1B2D]">
               <thead className="bg-[#0A1F36] text-[#C9D6E3] text-xs uppercase font-heading tracking-wider border-b border-[#142C4B]">
                 <tr>
+                  <th className="py-3.5 px-3 text-center w-20">N° Orden</th>
                   <th className="py-3.5 px-4">Foto</th>
                   <th className="py-3.5 px-4">Título / Detalle</th>
                   <th className="py-3.5 px-4">Categoría</th>
@@ -545,6 +562,14 @@ export default function AdminProductosPage() {
                       key={prod.PR_ID}
                       className="hover:bg-[#FAF9F6] transition-colors"
                     >
+                      <td className="py-3 px-3 text-center">
+                        <span
+                          className="inline-flex items-center justify-center min-w-9 px-2 py-1 rounded-lg bg-[#FAF9F6] border border-[#DDD8CE] font-mono text-xs font-extrabold text-[#12355B] shadow-2xs"
+                          title={`Orden de visualización: #${prod.PR_ORDENAR || 0}`}
+                        >
+                          #{prod.PR_ORDENAR || 0}
+                        </span>
+                      </td>
                       <td className="py-3 px-4">
                         <div className="w-12 h-12 rounded-xl bg-[#FAF9F6] border border-[#DDD8CE] overflow-hidden flex items-center justify-center">
                           {photoUrl ? (
@@ -779,50 +804,71 @@ export default function AdminProductosPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-[#0F1B2D]">
-                    Precio Mayorista ($)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.precio}
-                    onChange={(e) =>
-                      setFormData({ ...formData, precio: Number(e.target.value) })
-                    }
-                    className="w-full h-11 px-3 bg-[#FAF9F6] border border-[#CFC9BD] rounded-lg text-sm text-[#0F1B2D] outline-hidden focus:border-[#12355B] focus:bg-white"
-                  />
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[#0F1B2D]">
+                      Precio Mayorista ($)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.precio}
+                      onChange={(e) =>
+                        setFormData({ ...formData, precio: Number(e.target.value) })
+                      }
+                      className="w-full h-11 px-3 bg-[#FAF9F6] border border-[#CFC9BD] rounded-lg text-sm text-[#0F1B2D] outline-hidden focus:border-[#12355B] focus:bg-white"
+                    />
+                  </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-[#0F1B2D]">
-                    Stock Disponible
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.stock}
-                    onChange={(e) =>
-                      setFormData({ ...formData, stock: Number(e.target.value) })
-                    }
-                    className="w-full h-11 px-3 bg-[#FAF9F6] border border-[#CFC9BD] rounded-lg text-sm text-[#0F1B2D] outline-hidden focus:border-[#12355B] focus:bg-white"
-                  />
-                </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[#0F1B2D]">
+                      Stock Disponible
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.stock}
+                      onChange={(e) =>
+                        setFormData({ ...formData, stock: Number(e.target.value) })
+                      }
+                      className="w-full h-11 px-3 bg-[#FAF9F6] border border-[#CFC9BD] rounded-lg text-sm text-[#0F1B2D] outline-hidden focus:border-[#12355B] focus:bg-white"
+                    />
+                  </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-[#0F1B2D]">
-                    Estado
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) =>
-                      setFormData({ ...formData, status: Number(e.target.value) })
-                    }
-                    className="w-full h-11 px-3 bg-[#FAF9F6] border border-[#CFC9BD] rounded-lg text-sm text-[#0F1B2D] outline-hidden focus:border-[#12355B] focus:bg-white"
-                  >
-                    <option value={1}>Activo (Visible)</option>
-                    <option value={0}>Inactivo (Oculto)</option>
-                  </select>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[#0F1B2D] flex items-center justify-between">
+                      <span>N° de Orden</span>
+                      <span className="text-[10px] text-[#8A96A5] font-normal lowercase">(posición)</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.ordenar}
+                      onChange={(e) =>
+                        setFormData({ ...formData, ordenar: Number(e.target.value) })
+                      }
+                      placeholder="Ej: 10, 20..."
+                      className="w-full h-11 px-3 bg-[#FAF9F6] border border-[#CFC9BD] rounded-lg text-sm text-[#0F1B2D] font-mono font-bold outline-hidden focus:border-[#12355B] focus:bg-white"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[#0F1B2D]">
+                      Estado
+                    </label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) =>
+                        setFormData({ ...formData, status: Number(e.target.value) })
+                      }
+                      className="w-full h-11 px-3 bg-[#FAF9F6] border border-[#CFC9BD] rounded-lg text-sm text-[#0F1B2D] outline-hidden focus:border-[#12355B] focus:bg-white"
+                    >
+                      <option value={1}>Activo (Visible)</option>
+                      <option value={0}>Inactivo (Oculto)</option>
+                    </select>
+                  </div>
                 </div>
+                <span className="text-[11px] text-[#8A96A5]">
+                  El número de orden define la posición del producto en el catálogo (los números menores aparecen primero, ej: 1, 2, 3...).
+                </span>
               </div>
 
               {/* Sección de Fotos del Producto */}

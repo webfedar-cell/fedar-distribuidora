@@ -49,7 +49,12 @@ export default function ProductosPage() {
         if (prodRes.ok) {
           const json = await prodRes.json();
           if (json.data && json.data.length > 0) {
-            setProductsList(json.data);
+            const sorted = [...json.data].sort((a: ProductItem, b: ProductItem) => {
+              const ordA = a.order !== undefined && a.order > 0 ? a.order : 999999;
+              const ordB = b.order !== undefined && b.order > 0 ? b.order : 999999;
+              return ordA - ordB;
+            });
+            setProductsList(sorted);
           }
         }
 
