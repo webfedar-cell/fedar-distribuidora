@@ -20,17 +20,16 @@ export async function GET() {
         p.PR_STATUS,
         c.CA_NOMBRE AS CATEGORIA_NOMBRE,
         s.SUB_NOMBRE AS SUBCATEGORIA_NOMBRE,
-        f.FO_ARCHIVO AS FOTO_ARCHIVO
+        (
+          SELECT f.FO_ARCHIVO 
+          FROM \`FOTOS\` f 
+          WHERE f.FO_IDPRODUCTO = p.PR_ID 
+          ORDER BY f.FO_PRINCIPAL DESC, f.FO_ID ASC 
+          LIMIT 1
+        ) AS FOTO_ARCHIVO
       FROM \`PRODUCTOS\` p
       LEFT JOIN \`CATEGORIAS\` c ON p.PR_CATEGORIA = c.CA_ID
       LEFT JOIN \`SUBCATEGORIAS\` s ON p.PR_SUBCATEGORIA = s.SUB_ID
-      LEFT JOIN \`FOTOS\` f ON (
-        f.FO_IDPRODUCTO = p.PR_ID AND (
-          f.FO_PRINCIPAL = 1 OR f.FO_ID = (
-            SELECT MIN(f2.FO_ID) FROM \`FOTOS\` f2 WHERE f2.FO_IDPRODUCTO = p.PR_ID
-          )
-        )
-      )
       WHERE p.PR_STATUS = 1 
       GROUP BY p.PR_ID
       ORDER BY p.PR_ORDENAR ASC, p.PR_TITULO ASC`
@@ -63,9 +62,14 @@ export async function GET() {
           items = [`Variedad completa de medidas para ${title}`];
         }
 
-        const imageUrl = fileName
-          ? `${photosBaseUrl.replace(/\/$/, "")}/${encodeURI(fileName)}`
-          : undefined;
+        let imageUrl: string | undefined = undefined;
+        if (fileName) {
+          if (fileName.startsWith("http://") || fileName.startsWith("https://") || fileName.startsWith("/")) {
+            imageUrl = fileName;
+          } else {
+            imageUrl = `${photosBaseUrl.replace(/\/$/, "")}/${encodeURI(fileName)}`;
+          }
+        }
 
         return {
           id: row.PR_URL ? row.PR_URL.toLowerCase() : String(row.PR_ID),

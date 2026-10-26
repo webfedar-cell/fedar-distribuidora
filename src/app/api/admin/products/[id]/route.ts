@@ -61,6 +61,7 @@ export async function PUT(
       importancia = 0,
       status = 1,
       foto = "",
+      photos,
     } = body;
 
     if (!titulo || !titulo.trim()) {
@@ -92,12 +93,74 @@ export async function PUT(
       productId,
     ]);
 
-    // Actualizar o insertar foto principal si se proveyó
-    if (foto && foto.trim()) {
+    // Gestión completa de fotos si se envió la lista 'photos'
+    if (Array.isArray(photos)) {
+      const validPhotos = photos
+        .filter((p: any) => p && typeof p.FO_ARCHIVO === "string" && p.FO_ARCHIVO.trim().length > 0)
+        .map((p: any) => ({
+          FO_ID: p.FO_ID ? Number(p.FO_ID) : undefined,
+          FO_ARCHIVO: p.FO_ARCHIVO.trim(),
+          FO_PRINCIPAL: p.FO_PRINCIPAL ? 1 : 0,
+        }));
+
+      // Asegurar que exactamente una foto sea la principal si hay fotos
+      if (validPhotos.length > 0) {
+        const principalCount = validPhotos.filter((p) => p.FO_PRINCIPAL === 1).length;
+        if (principalCount === 0) {
+          validPhotos[0].FO_PRINCIPAL = 1;
+        } else if (principalCount > 1) {
+          let foundFirst = false;
+          for (const p of validPhotos) {
+            if (p.FO_PRINCIPAL === 1) {
+              if (!foundFirst) {
+                foundFirst = true;
+              } else {
+                p.FO_PRINCIPAL = 0;
+              }
+            }
+          }
+        }
+      }
+
+      // Obtener fotos actuales en DB
+      const existingDbPhotos: any[] = await query(
+        "SELECT FO_ID FROM FOTOS WHERE FO_IDPRODUCTO = ?",
+        [productId]
+      );
+      const existingIds = new Set(existingDbPhotos.map((p) => Number(p.FO_ID)));
+      const incomingIds = new Set(
+        validPhotos
+          .map((p) => p.FO_ID)
+          .filter((id): id is number => typeof id === "number" && !isNaN(id))
+      );
+
+      // Eliminar fotos que el usuario quitó
+      for (const oldId of existingIds) {
+        if (!incomingIds.has(oldId)) {
+          await query("DELETE FROM FOTOS WHERE FO_ID = ? AND FO_IDPRODUCTO = ?", [oldId, productId]);
+        }
+      }
+
+      // Actualizar existentes o insertar nuevas
+      for (const p of validPhotos) {
+        if (p.FO_ID && existingIds.has(p.FO_ID)) {
+          await query(
+            "UPDATE FOTOS SET FO_ARCHIVO = ?, FO_PRINCIPAL = ? WHERE FO_ID = ? AND FO_IDPRODUCTO = ?",
+            [p.FO_ARCHIVO, p.FO_PRINCIPAL, p.FO_ID, productId]
+          );
+        } else {
+          await query(
+            "INSERT INTO FOTOS (FO_IDPRODUCTO, FO_ARCHIVO, FO_PRINCIPAL) VALUES (?, ?, ?)",
+            [productId, p.FO_ARCHIVO, p.FO_PRINCIPAL]
+          );
+        }
+      }
+    } else if (foto && foto.trim()) {
+      // Fallback para mantener compatibilidad si solo se pasa 'foto'
       const existingPhoto = await query("SELECT FO_ID FROM FOTOS WHERE FO_IDPRODUCTO = ? LIMIT 1", [productId]);
       if (existingPhoto && existingPhoto.length > 0) {
         await query(
-          "UPDATE FOTOS SET FO_ARCHIVO = ? WHERE FO_ID = ?",
+          "UPDATE FOTOS SET FO_ARCHIVO = ?, FO_PRINCIPAL = 1 WHERE FO_ID = ?",
           [foto.trim(), (existingPhoto[0] as any).FO_ID]
         );
       } else {

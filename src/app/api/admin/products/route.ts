@@ -100,6 +100,7 @@ export async function POST(req: NextRequest) {
       importancia = 0,
       status = 1,
       foto = "",
+      photos,
     } = body;
 
     if (!titulo || !titulo.trim()) {
@@ -134,8 +135,41 @@ export async function POST(req: NextRequest) {
 
     const newProductId = result.insertId;
 
-    // Si se especificó una foto, guardarla en la tabla FOTOS
-    if (foto && foto.trim()) {
+    // Si se enviaron fotos en array, guardarlas
+    if (Array.isArray(photos) && photos.length > 0) {
+      const validPhotos = photos
+        .filter((p: any) => p && typeof p.FO_ARCHIVO === "string" && p.FO_ARCHIVO.trim().length > 0)
+        .map((p: any) => ({
+          FO_ARCHIVO: p.FO_ARCHIVO.trim(),
+          FO_PRINCIPAL: p.FO_PRINCIPAL ? 1 : 0,
+        }));
+
+      if (validPhotos.length > 0) {
+        const principalCount = validPhotos.filter((p) => p.FO_PRINCIPAL === 1).length;
+        if (principalCount === 0) {
+          validPhotos[0].FO_PRINCIPAL = 1;
+        } else if (principalCount > 1) {
+          let foundFirst = false;
+          for (const p of validPhotos) {
+            if (p.FO_PRINCIPAL === 1) {
+              if (!foundFirst) {
+                foundFirst = true;
+              } else {
+                p.FO_PRINCIPAL = 0;
+              }
+            }
+          }
+        }
+
+        for (const p of validPhotos) {
+          await query(
+            "INSERT INTO FOTOS (FO_IDPRODUCTO, FO_ARCHIVO, FO_PRINCIPAL) VALUES (?, ?, ?)",
+            [newProductId, p.FO_ARCHIVO, p.FO_PRINCIPAL]
+          );
+        }
+      }
+    } else if (foto && foto.trim()) {
+      // Fallback para foto individual
       await query(
         "INSERT INTO FOTOS (FO_IDPRODUCTO, FO_ARCHIVO, FO_PRINCIPAL) VALUES (?, ?, 1)",
         [newProductId, foto.trim()]

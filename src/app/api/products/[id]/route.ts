@@ -60,7 +60,14 @@ export async function GET(
       );
 
       const photos = (photoRows || [])
-        .map((f: any) => (f.FO_ARCHIVO ? `${photosBaseUrl.replace(/\/$/, "")}/${encodeURI(f.FO_ARCHIVO.trim())}` : null))
+        .map((f: any) => {
+          if (!f.FO_ARCHIVO) return null;
+          const fileName = f.FO_ARCHIVO.trim();
+          if (fileName.startsWith("http://") || fileName.startsWith("https://") || fileName.startsWith("/")) {
+            return fileName;
+          }
+          return `${photosBaseUrl.replace(/\/$/, "")}/${encodeURI(fileName)}`;
+        })
         .filter(Boolean) as string[];
 
       const title = (row.PR_TITULO || "").trim();

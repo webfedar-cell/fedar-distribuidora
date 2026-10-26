@@ -18,7 +18,18 @@ import {
   ChevronRight,
   ImageIcon,
   Sparkles,
+  Star,
+  Upload,
+  Link2,
 } from "lucide-react";
+
+export interface ProductPhoto {
+  FO_ID?: number;
+  FO_IDPRODUCTO?: number;
+  FO_ARCHIVO: string;
+  FO_PRINCIPAL: number;
+  previewUrl?: string;
+}
 
 interface ProductItem {
   PR_ID: number;
@@ -83,12 +94,32 @@ export default function AdminProductosPage() {
   const [actionError, setActionError] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
 
+  // Photos State for Create / Edit
+  const [productPhotos, setProductPhotos] = useState<ProductPhoto[]>([]);
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [newPhotoUrlInput, setNewPhotoUrlInput] = useState("");
+  const [showAddUrlInput, setShowAddUrlInput] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+
   // Delete State
   const [deleteConfirmProduct, setDeleteConfirmProduct] = useState<ProductItem | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const photosBaseUrl =
     process.env.NEXT_PUBLIC_PHOTOS_URL || "https://fedardistribuidora.com.ar/uploads/";
+
+  const getDisplayPhotoUrl = (photo: ProductPhoto | string | undefined | null) => {
+    if (!photo) return "";
+    if (typeof photo === "object" && photo.previewUrl) return photo.previewUrl;
+    const file = typeof photo === "object" ? photo.FO_ARCHIVO : photo;
+    if (!file) return "";
+    const trimmed = file.trim();
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("/")) {
+      return trimmed;
+    }
+    return `/uploads/${encodeURIComponent(trimmed)}`;
+  };
 
   // Cargar Categorías
   useEffect(() => {
@@ -153,6 +184,9 @@ export default function AdminProductosPage() {
       status: 1,
       foto: "",
     });
+    setProductPhotos([]);
+    setNewPhotoUrlInput("");
+    setShowAddUrlInput(false);
     setActionError("");
     setActionSuccess("");
     setModalOpen(true);
@@ -173,9 +207,154 @@ export default function AdminProductosPage() {
       status: product.PR_STATUS,
       foto: product.FOTO_PRINCIPAL || "",
     });
+    setNewPhotoUrlInput("");
+    setShowAddUrlInput(false);
     setActionError("");
     setActionSuccess("");
     setModalOpen(true);
+
+    // Cargar foto principal mientras se solicitan las demás
+    if (product.FOTO_PRINCIPAL) {
+      setProductPhotos([
+        {
+          FO_ARCHIVO: product.FOTO_PRINCIPAL,
+          FO_PRINCIPAL: 1,
+        },
+      ]);
+    } else {
+      setProductPhotos([]);
+    }
+
+    // Cargar fotos completas asociadas al producto
+    setLoadingPhotos(true);
+    try {
+      const res = await fetch(`/api/admin/products/${product.PR_ID}`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.photos)) {
+        if (data.photos.length > 0) {
+          const hasPrincipal = data.photos.some((p: any) => p.FO_PRINCIPAL === 1);
+          const mapped: ProductPhoto[] = data.photos.map((p: any, idx: number) => ({
+            FO_ID: p.FO_ID,
+            FO_IDPRODUCTO: p.FO_IDPRODUCTO,
+            FO_ARCHIVO: p.FO_ARCHIVO,
+            FO_PRINCIPAL: hasPrincipal ? p.FO_PRINCIPAL : idx === 0 ? 1 : 0,
+          }));
+          setProductPhotos(mapped);
+        } else if (product.FOTO_PRINCIPAL) {
+          setProductPhotos([
+            {
+              FO_ARCHIVO: product.FOTO_PRINCIPAL,
+              FO_PRINCIPAL: 1,
+            },
+          ]);
+        } else {
+          setProductPhotos([]);
+        }
+      }
+    } catch (e) {
+      console.error("Error al cargar fotos completas:", e);
+    } finally {
+      setLoadingPhotos(false);
+    }
+  };
+
+  // Manejar selección de foto principal
+  const handleSetPrincipalPhoto = (index: number) => {
+    setProductPhotos((prev) =>
+      prev.map((photo, i) => ({
+        ...photo,
+        FO_PRINCIPAL: i === index ? 1 : 0,
+      }))
+    );
+  };
+
+  // Eliminar foto de la lista
+  const handleRemovePhoto = (index: number) => {
+    setProductPhotos((prev) => {
+      const wasPrincipal = prev[index]?.FO_PRINCIPAL === 1;
+      const updated = prev.filter((_, i) => i !== index);
+      if (wasPrincipal && updated.length > 0) {
+        updated[0].FO_PRINCIPAL = 1;
+      }
+      return updated;
+    });
+  };
+
+  // Procesar archivos subidos
+  const processFiles = async (fileList: FileList | File[]) => {
+    const files = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
+    if (files.length === 0) {
+      setActionError("Por favor selecciona archivos de imagen válidos (JPG, PNG, WEBP).");
+      return;
+    }
+
+    setUploadingPhotos(true);
+    setActionError("");
+
+    try {
+      const uploadFormData = new FormData();
+      files.forEach((f) => uploadFormData.append("files", f));
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: uploadFormData,
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setActionError(data.message || "Error al subir las imágenes.");
+      } else {
+        const uploadedList = data.files || [];
+        setProductPhotos((prev) => {
+          const hadPrincipal = prev.some((p) => p.FO_PRINCIPAL === 1);
+          const newEntries: ProductPhoto[] = uploadedList.map((item: any, idx: number) => ({
+            FO_ARCHIVO: item.filename,
+            FO_PRINCIPAL: !hadPrincipal && idx === 0 ? 1 : 0,
+            previewUrl: item.url,
+          }));
+          return [...prev, ...newEntries];
+        });
+      }
+    } catch (err: any) {
+      console.error("Error al subir fotos:", err);
+      setActionError("Error al comunicarse con el servidor al subir imágenes.");
+    } finally {
+      setUploadingPhotos(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    await processFiles(e.target.files);
+    e.target.value = "";
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      await processFiles(e.dataTransfer.files);
+    }
+  };
+
+  // Añadir foto manual por URL o nombre
+  const handleAddManualPhoto = () => {
+    const trimmed = newPhotoUrlInput.trim();
+    if (!trimmed) return;
+
+    setProductPhotos((prev) => {
+      const hadPrincipal = prev.some((p) => p.FO_PRINCIPAL === 1);
+      return [
+        ...prev,
+        {
+          FO_ARCHIVO: trimmed,
+          FO_PRINCIPAL: !hadPrincipal ? 1 : 0,
+        },
+      ];
+    });
+
+    setNewPhotoUrlInput("");
+    setShowAddUrlInput(false);
   };
 
   const handleSaveProduct = async (e: React.FormEvent) => {
@@ -195,10 +374,18 @@ export default function AdminProductosPage() {
         : "/api/admin/products";
       const method = editingProduct ? "PUT" : "POST";
 
+      const principalPhoto = productPhotos.find((p) => p.FO_PRINCIPAL === 1) || productPhotos[0];
+
+      const payload = {
+        ...formData,
+        photos: productPhotos,
+        foto: principalPhoto ? principalPhoto.FO_ARCHIVO : "",
+      };
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -350,9 +537,7 @@ export default function AdminProductosPage() {
               <tbody className="divide-y divide-[#EAE5DB]">
                 {products.map((prod) => {
                   const photoUrl = prod.FOTO_PRINCIPAL
-                    ? prod.FOTO_PRINCIPAL.startsWith("http")
-                      ? prod.FOTO_PRINCIPAL
-                      : `${photosBaseUrl.replace(/\/$/, "")}/${encodeURIComponent(prod.FOTO_PRINCIPAL)}`
+                    ? getDisplayPhotoUrl(prod.FOTO_PRINCIPAL)
                     : null;
 
                   return (
@@ -470,11 +655,11 @@ export default function AdminProductosPage() {
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in overflow-y-auto">
           <div
-            className="bg-white rounded-2xl max-w-2xl w-full my-8 overflow-hidden shadow-2xl border border-[#DDD8CE] flex flex-col"
+            className="bg-white rounded-2xl max-w-3xl w-full my-6 max-h-[92vh] overflow-hidden shadow-2xl border border-[#DDD8CE] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-5 bg-[#0A1F36] text-white">
+            <div className="flex items-center justify-between p-5 bg-[#0A1F36] text-white shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[#E0A93B]/20 text-[#E0A93B] flex items-center justify-center">
                   <Package className="w-5 h-5" />
@@ -499,7 +684,7 @@ export default function AdminProductosPage() {
             </div>
 
             {/* Modal Form */}
-            <form onSubmit={handleSaveProduct} className="p-6 flex flex-col gap-4">
+            <form onSubmit={handleSaveProduct} className="p-6 flex flex-col gap-4 overflow-y-auto max-h-[calc(92vh-130px)]">
               {actionError && (
                 <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -640,35 +825,228 @@ export default function AdminProductosPage() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#0F1B2D]">
-                  Nombre de Archivo de Foto Principal o URL
-                </label>
-                <input
-                  type="text"
-                  value={formData.foto}
-                  onChange={(e) =>
-                    setFormData({ ...formData, foto: e.target.value })
-                  }
-                  placeholder="Ej: foto_terminales.jpg"
-                  className="w-full h-11 px-3 bg-[#FAF9F6] border border-[#CFC9BD] rounded-lg text-sm text-[#0F1B2D] outline-hidden focus:border-[#12355B] focus:bg-white font-mono"
-                />
-                <span className="text-[11px] text-[#8A96A5]">
-                  Nombre de la foto almacenada en uploads de Banahosting.
-                </span>
+              {/* Sección de Fotos del Producto */}
+              <div className="flex flex-col gap-3 pt-3 pb-1 border-t border-[#EAE5DB]">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-[#E0A93B]/20 text-[#B88218] flex items-center justify-center">
+                      <ImageIcon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#0F1B2D] flex items-center gap-2">
+                        <span>Fotos del Producto</span>
+                        <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-[#12355B]/10 text-[#12355B]">
+                          {productPhotos.length}
+                        </span>
+                      </label>
+                      <p className="text-[11px] text-[#5A6472]">
+                        Haz clic en <strong>⭐ Hacer Principal</strong> para elegir cuál será la foto de portada.
+                      </p>
+                    </div>
+                  </div>
+
+                  {productPhotos.length > 0 && (
+                    <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full flex items-center gap-1">
+                      <Star className="w-3 h-3 text-[#E0A93B] fill-[#E0A93B]" />
+                      <span>
+                        Principal:{" "}
+                        {productPhotos.find((p) => p.FO_PRINCIPAL === 1)?.FO_ARCHIVO || "Primera"}
+                      </span>
+                    </span>
+                  )}
+                </div>
+
+                {loadingPhotos ? (
+                  <div className="py-8 bg-[#FAF9F6] border border-[#DDD8CE] rounded-xl flex items-center justify-center gap-2 text-xs text-[#5A6472]">
+                    <Loader2 className="w-4 h-4 animate-spin text-[#12355B]" />
+                    <span>Cargando fotos del producto...</span>
+                  </div>
+                ) : (
+                  <>
+                    {/* Galería de fotos existentes */}
+                    {productPhotos.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        {productPhotos.map((photo, index) => {
+                          const isPrincipal = photo.FO_PRINCIPAL === 1;
+                          const displayUrl = getDisplayPhotoUrl(photo);
+
+                          return (
+                            <div
+                              key={photo.FO_ID ? `db-${photo.FO_ID}` : `temp-${index}-${photo.FO_ARCHIVO}`}
+                              className={`relative rounded-xl overflow-hidden border-2 transition-all flex flex-col bg-white shadow-xs ${
+                                isPrincipal
+                                  ? "border-[#E0A93B] ring-2 ring-[#E0A93B]/40"
+                                  : "border-[#DDD8CE] hover:border-[#12355B]/50"
+                              }`}
+                            >
+                              {/* Badge Principal */}
+                              {isPrincipal && (
+                                <div className="absolute top-2 left-2 z-10 bg-[#E0A93B] text-[#0A1F36] text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md shadow-md flex items-center gap-1 tracking-wider">
+                                  <Star className="w-3 h-3 fill-[#0A1F36]" />
+                                  <span>Principal</span>
+                                </div>
+                              )}
+
+                              {/* Botón Eliminar */}
+                              <button
+                                type="button"
+                                onClick={() => handleRemovePhoto(index)}
+                                title="Eliminar foto"
+                                className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-white/90 hover:bg-rose-600 text-[#5A6472] hover:text-white flex items-center justify-center transition-all shadow-md cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* Thumbnail Imagen */}
+                              <div className="w-full aspect-square bg-[#FAF9F6] flex items-center justify-center overflow-hidden">
+                                {displayUrl ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={displayUrl}
+                                    alt={photo.FO_ARCHIVO}
+                                    className="w-full h-full object-cover"
+                                    onError={(e: any) => {
+                                      e.target.style.display = "none";
+                                    }}
+                                  />
+                                ) : (
+                                  <ImageIcon className="w-8 h-8 text-[#CFC9BD]" />
+                                )}
+                              </div>
+
+                              {/* Info & Botón para seleccionar principal */}
+                              <div className="p-2 border-t border-[#EAE5DB] bg-[#FAF9F6] flex flex-col gap-1.5">
+                                <div
+                                  className="text-[10px] text-[#5A6472] font-mono truncate"
+                                  title={photo.FO_ARCHIVO}
+                                >
+                                  {photo.FO_ARCHIVO}
+                                </div>
+
+                                {isPrincipal ? (
+                                  <div className="py-1 px-2 rounded-lg bg-[#0A1F36] text-[#E0A93B] text-[10px] font-bold flex items-center justify-center gap-1 shadow-xs">
+                                    <Star className="w-3 h-3 fill-[#E0A93B]" />
+                                    <span>Foto Portada</span>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSetPrincipalPhoto(index)}
+                                    className="w-full py-1 px-2 rounded-lg bg-white hover:bg-[#12355B] text-[#5A6472] hover:text-white border border-[#DDD8CE] text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
+                                  >
+                                    <Star className="w-3 h-3 text-[#E0A93B]" />
+                                    <span>Hacer Principal</span>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Dropzone para subir fotos */}
+                    <div
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setIsDragging(true);
+                      }}
+                      onDragLeave={() => setIsDragging(false)}
+                      onDrop={handleDrop}
+                      className={`relative border-2 border-dashed rounded-xl p-5 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-2 ${
+                        isDragging
+                          ? "border-[#12355B] bg-[#12355B]/5 scale-[0.99]"
+                          : "border-[#CFC9BD] hover:border-[#12355B] bg-[#FAF9F6] hover:bg-white"
+                      }`}
+                    >
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+                        disabled={uploadingPhotos}
+                        onChange={handleFileUpload}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+
+                      {uploadingPhotos ? (
+                        <div className="flex flex-col items-center gap-2 py-2">
+                          <Loader2 className="w-6 h-6 animate-spin text-[#12355B]" />
+                          <span className="text-xs font-bold text-[#12355B]">
+                            Subiendo imagen(es)... por favor espera.
+                          </span>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="w-10 h-10 rounded-full bg-[#12355B]/10 text-[#12355B] flex items-center justify-center">
+                            <Upload className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-[#0F1B2D]">
+                              Haz clic aquí o arrastra fotos para subirlas
+                            </span>
+                            <p className="text-[11px] text-[#5A6472] mt-0.5">
+                              Formatos permitidos: JPG, PNG, WEBP (hasta 12MB). Puedes seleccionar varias a la vez.
+                            </p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Opción de agregar manualmente por URL o nombre en Banahosting */}
+                    <div className="flex flex-col gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddUrlInput(!showAddUrlInput)}
+                        className="text-xs text-[#12355B] hover:text-[#0A1F36] font-semibold flex items-center gap-1.5 self-start cursor-pointer transition-colors"
+                      >
+                        <Link2 className="w-3.5 h-3.5" />
+                        <span>
+                          {showAddUrlInput
+                            ? "Ocultar ingreso manual por nombre/URL"
+                            : "+ ¿Deseas agregar una foto por nombre de archivo o URL?"}
+                        </span>
+                      </button>
+
+                      {showAddUrlInput && (
+                        <div className="p-3 bg-[#FAF9F6] border border-[#DDD8CE] rounded-xl flex flex-col sm:flex-row gap-2 animate-in fade-in">
+                          <input
+                            type="text"
+                            value={newPhotoUrlInput}
+                            onChange={(e) => setNewPhotoUrlInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleAddManualPhoto();
+                              }
+                            }}
+                            placeholder="Ej: cam.jpg o https://dominio.com/foto.jpg"
+                            className="flex-1 h-10 px-3 bg-white border border-[#CFC9BD] rounded-lg text-xs text-[#0F1B2D] outline-hidden focus:border-[#12355B] font-mono"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddManualPhoto}
+                            className="px-4 py-2 bg-[#12355B] hover:bg-[#0A1F36] text-white text-xs font-bold rounded-lg cursor-pointer whitespace-nowrap transition-colors"
+                          >
+                            Añadir Foto
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-3 mt-4 pt-4 border-t border-[#EAE5DB]">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2.5 text-xs font-bold text-[#5A6472] hover:text-[#0F1B2D] rounded-xl hover:bg-[#FAF9F6]"
+                  className="px-4 py-2.5 text-xs font-bold text-[#5A6472] hover:text-[#0F1B2D] rounded-xl hover:bg-[#FAF9F6] cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  disabled={saving}
+                  disabled={saving || uploadingPhotos}
                   className="px-5 py-2.5 rounded-xl bg-[#12355B] hover:bg-[#0A1F36] text-white font-bold text-xs flex items-center gap-2 shadow-md disabled:opacity-70 cursor-pointer"
                 >
                   {saving ? (
