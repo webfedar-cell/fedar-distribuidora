@@ -66,7 +66,7 @@ export async function GET(
           if (fileName.startsWith("http://") || fileName.startsWith("https://") || fileName.startsWith("/")) {
             return fileName;
           }
-          return `${photosBaseUrl.replace(/\/$/, "")}/${encodeURI(fileName)}`;
+          return `/uploads/${encodeURI(fileName)}`;
         })
         .filter(Boolean) as string[];
 

@@ -67,7 +67,7 @@ export async function GET() {
           if (fileName.startsWith("http://") || fileName.startsWith("https://") || fileName.startsWith("/")) {
             imageUrl = fileName;
           } else {
-            imageUrl = `${photosBaseUrl.replace(/\/$/, "")}/${encodeURI(fileName)}`;
+            imageUrl = `/uploads/${encodeURI(fileName)}`;
           }
         }
 

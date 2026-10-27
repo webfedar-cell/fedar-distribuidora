@@ -79,7 +79,7 @@ export async function GET() {
           const fileName = r.PO_ARCHIVO.trim();
           const imgUrl = fileName.startsWith("http") || fileName.startsWith("/")
             ? fileName
-            : `${portadaBaseUrl.replace(/\/$/, "")}/${encodeURI(fileName)}`;
+            : `/portada/${encodeURI(fileName)}`;
 
           const title = (r.PO_TITULO || "").trim() || "Organizador de Mostrador";
           const subtitle = (r.PO_DESCRIPCION || "").trim() || "Sistema Mostrador";
