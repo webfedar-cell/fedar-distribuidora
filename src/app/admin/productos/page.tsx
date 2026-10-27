@@ -304,7 +304,8 @@ export default function AdminProductosPage() {
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setActionError(data.message || "Error al subir las imágenes.");
+        const detail = data.error ? ` (${data.error})` : "";
+        setActionError((data.message || "Error al subir las imágenes.") + detail);
       } else {
         const uploadedList = data.files || [];
         setProductPhotos((prev) => {

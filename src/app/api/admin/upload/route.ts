@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { query } from "@/lib/db";
+
+const MIME_TYPES: Record<string, string> = {
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".webp": "image/webp",
+  ".gif": "image/gif",
+  ".svg": "image/svg+xml",
+  ".avif": "image/avif",
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,8 +35,6 @@ export async function POST(req: NextRequest) {
 
     const folderParam = formData.get("folder") as string | null;
     const targetFolder = folderParam === "portada" ? "portada" : "uploads";
-    const uploadDir = path.join(process.cwd(), "public", targetFolder);
-    await fs.promises.mkdir(uploadDir, { recursive: true });
 
     const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg", ".avif"];
     const uploadedResults: Array<{ filename: string; url: string; originalName: string }> = [];
@@ -62,11 +71,31 @@ export async function POST(req: NextRequest) {
         .replace(/[^a-z0-9_-]/g, "_")
         .slice(0, 30);
       const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      const safeFilename = `${cleanBase || "slide"}_${uniqueSuffix}${ext}`;
-      const targetFilePath = path.join(uploadDir, safeFilename);
+      const safeFilename = `${cleanBase || "foto"}_${uniqueSuffix}${ext}`;
+      const mimeType = file.type || MIME_TYPES[ext] || "image/jpeg";
 
       const buffer = Buffer.from(await file.arrayBuffer());
-      await fs.promises.writeFile(targetFilePath, buffer);
+
+      // 1. Guardar de forma persistente en la base de datos MySQL (tabla IMAGENES_ARCHIVOS)
+      // Esto garantiza que funcione en cualquier entorno serverless como Vercel donde el disco es read-only
+      await query(
+        `INSERT INTO IMAGENES_ARCHIVOS (filename, folder, mime_type, size, data)
+         VALUES (?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE mime_type = VALUES(mime_type), size = VALUES(size), data = VALUES(data)`,
+        [safeFilename, targetFolder, mimeType, buffer.length, buffer]
+      );
+
+      // 2. Intentar guardar en disco local si el sistema de archivos lo permite (ej: desarrollo local)
+      try {
+        const uploadDir = path.join(process.cwd(), "public", targetFolder);
+        await fs.promises.mkdir(uploadDir, { recursive: true });
+        const targetFilePath = path.join(uploadDir, safeFilename);
+        await fs.promises.writeFile(targetFilePath, buffer);
+      } catch (fsErr: any) {
+        // En Vercel / serverless el sistema de archivos es read-only (EROFS / ENOENT).
+        // Al estar persistido en MySQL, la ruta GET servirá la imagen directamente sin problemas.
+        console.warn("Aviso: Escritura en disco omitida (entorno serverless):", fsErr?.message);
+      }
 
       uploadedResults.push({
         filename: safeFilename,

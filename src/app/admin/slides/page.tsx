@@ -146,7 +146,8 @@ export default function AdminSlidesPage() {
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setActionError(data.message || "Error al subir la imagen del banner.");
+        const detail = data.error ? ` (${data.error})` : "";
+        setActionError((data.message || "Error al subir la imagen del banner.") + detail);
       } else {
         setFormData((prev) => ({
           ...prev,
