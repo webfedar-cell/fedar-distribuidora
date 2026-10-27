@@ -31,34 +31,43 @@ export async function GET(
       ".avif": "image/avif",
     };
 
-    // 1. Servir desde disco local si existe
-    try {
-      const filePath = path.join(process.cwd(), "public", "uploads", relativePath);
-      if (fs.existsSync(filePath)) {
-        const stat = await fs.promises.stat(filePath);
-        if (stat.isFile()) {
-          const fileBuffer = await fs.promises.readFile(filePath);
-          const ext = path.extname(filePath).toLowerCase();
-          const contentType = mimeTypes[ext] || "application/octet-stream";
+    // 1. Servir desde disco local si existe (buscar en public/uploads y ../public_html/uploads)
+    const decodedName = decodeURIComponent(relativePath);
+    const candidatePaths = [
+      path.join(process.cwd(), "public", "uploads", relativePath),
+      path.join(process.cwd(), "public", "uploads", decodedName),
+      path.join(process.cwd(), "..", "public_html", "uploads", relativePath),
+      path.join(process.cwd(), "..", "public_html", "uploads", decodedName),
+    ];
 
-          return new NextResponse(fileBuffer, {
-            headers: {
-              "Content-Type": contentType,
-              "Content-Length": stat.size.toString(),
-              "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
-            },
-          });
+    for (const filePath of candidatePaths) {
+      try {
+        if (fs.existsSync(filePath)) {
+          const stat = await fs.promises.stat(filePath);
+          if (stat.isFile()) {
+            const fileBuffer = await fs.promises.readFile(filePath);
+            const ext = path.extname(filePath).toLowerCase();
+            const contentType = mimeTypes[ext] || "image/jpeg";
+
+            return new NextResponse(fileBuffer, {
+              headers: {
+                "Content-Type": contentType,
+                "Content-Length": stat.size.toString(),
+                "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+              },
+            });
+          }
         }
+      } catch {
+        // Continuar buscando
       }
-    } catch {
-      // Ignorar errores de filesystem en serverless
     }
 
     // 2. Buscar en base de datos MySQL (IMAGENES_ARCHIVOS)
     try {
       const rows = await query<any>(
-        "SELECT mime_type, size, data FROM IMAGENES_ARCHIVOS WHERE filename = ? AND folder = 'uploads' LIMIT 1",
-        [relativePath]
+        "SELECT mime_type, size, data FROM IMAGENES_ARCHIVOS WHERE (filename = ? OR filename = ?) AND folder = 'uploads' LIMIT 1",
+        [relativePath, decodedName]
       );
       if (rows && rows.length > 0) {
         const img = rows[0];
@@ -78,11 +87,17 @@ export async function GET(
       console.error("Error al consultar imagen en DB:", dbErr);
     }
 
-    // 3. Fallback remoto (Banahosting uploads para fotos históricas)
+    // 3. Fallback remoto o evitar bucle infinito
+    const host = req.headers.get("host") || "";
     const remoteBase =
       process.env.NEXT_PUBLIC_PHOTOS_URL || "https://fedardistribuidora.com.ar/uploads/";
-    const remoteUrl = `${remoteBase.replace(/\/$/, "")}/${encodeURI(relativePath)}`;
+    const isSameHost = host && (remoteBase.includes(host) || host.includes("fedardistribuidora"));
 
+    if (isSameHost) {
+      return new NextResponse(null, { status: 404 });
+    }
+
+    const remoteUrl = `${remoteBase.replace(/\/$/, "")}/${encodeURI(decodedName)}`;
     return NextResponse.redirect(remoteUrl, 307);
   } catch (error: any) {
     console.error("Error al servir imagen de uploads:", error);

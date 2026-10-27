@@ -1,8 +1,9 @@
 -- Esquema Inicial para Base de Datos MySQL FEDAR Distribuidora
 -- Base de datos: fedar_distribuidora
 
-CREATE DATABASE IF NOT EXISTS `fedar_distribuidora` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `fedar_distribuidora`;
+-- Si estás importando en cPanel (phpMyAdmin), selecciona primero tu base de datos creada en el menú lateral izquierdo.
+-- CREATE DATABASE IF NOT EXISTS `fedar_distribuidora` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- USE `fedar_distribuidora`;
 
 -- 1. Tabla de Categorías / Líneas de Productos
 CREATE TABLE IF NOT EXISTS `categorias` (
@@ -55,6 +56,14 @@ CREATE TABLE IF NOT EXISTS `solicitudes_lista` (
   `telefono` VARCHAR(50) DEFAULT NULL,
   `email` VARCHAR(150) DEFAULT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 5. Tabla de Almacenamiento de Imágenes en Base de Datos (Uploads)
+CREATE TABLE IF NOT EXISTS `IMAGENES_ARCHIVOS` (
+  `NOMBRE_ARCHIVO` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `TIPO_MIME` VARCHAR(100) NOT NULL,
+  `CONTENIDO` LONGBLOB NOT NULL,
+  `FECHA_CREACION` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Inserción de Líneas de Productos Iniciales
